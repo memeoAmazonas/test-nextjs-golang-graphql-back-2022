@@ -9,6 +9,23 @@ type Comment struct {
 	Email  string `json:"email"`
 }
 
+type NewComment struct {
+	PostID int    `json:"postId"`
+	Name   string `json:"name"`
+	Body   string `json:"body"`
+}
+
+type NewPost struct {
+	UserID   int    `json:"userId"`
+	NameUser string `json:"nameUser"`
+	Body     string `json:"body"`
+}
+
+type NewUser struct {
+	Name  *string `json:"name"`
+	Email *string `json:"email"`
+}
+
 type Post struct {
 	UserID   int    `json:"userId"`
 	ID       int    `json:"id"`

@@ -13,10 +13,10 @@ func GetPost() []*model.Post {
 	}
 	return res
 }
-func GetCommentByPost(id string) []*model.Comment {
-	res, err := client.GetCommentByPost(id)
+func CreatePost(input *model.NewPost) int {
+	res, err := client.CreatePost(input)
 	if err != nil {
-		log.Error("Get comment by post")
+		log.Error("Create post")
 	}
 	return res
 }
