@@ -13,3 +13,10 @@ func CreateUser(input *model.NewUser) int {
 	}
 	return res
 }
+func GetUserByEmail(email string) *model.User {
+	res, err := client.GetUserByEmail(email)
+	if err != nil {
+		log.Error("Get user")
+	}
+	return res
+}

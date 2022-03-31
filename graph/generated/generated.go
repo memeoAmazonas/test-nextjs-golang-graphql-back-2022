@@ -59,12 +59,12 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		CommentByPost func(childComplexity int, id string) int
-		CreateComment func(childComplexity int, input *model.NewComment) int
-		CreatePost    func(childComplexity int, input *model.NewPost) int
-		CreateUser    func(childComplexity int, input *model.NewUser) int
-		GetUser       func(childComplexity int, id int) int
-		Posts         func(childComplexity int) int
+		CommentByPost  func(childComplexity int, id string) int
+		CreateComment  func(childComplexity int, input *model.NewComment) int
+		CreatePost     func(childComplexity int, input *model.NewPost) int
+		CreateUser     func(childComplexity int, input *model.NewUser) int
+		GetUserByEmail func(childComplexity int, email string) int
+		Posts          func(childComplexity int) int
 	}
 
 	User struct {
@@ -76,11 +76,11 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	Posts(ctx context.Context) ([]*model.Post, error)
-	GetUser(ctx context.Context, id int) (*model.User, error)
 	CommentByPost(ctx context.Context, id string) ([]*model.Comment, error)
 	CreateComment(ctx context.Context, input *model.NewComment) (string, error)
 	CreateUser(ctx context.Context, input *model.NewUser) (int, error)
 	CreatePost(ctx context.Context, input *model.NewPost) (int, error)
+	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
 }
 
 type executableSchema struct {
@@ -216,17 +216,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.CreateUser(childComplexity, args["input"].(*model.NewUser)), true
 
-	case "Query.GetUser":
-		if e.complexity.Query.GetUser == nil {
+	case "Query.GetUserByEmail":
+		if e.complexity.Query.GetUserByEmail == nil {
 			break
 		}
 
-		args, err := ec.field_Query_GetUser_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_GetUserByEmail_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.GetUser(childComplexity, args["id"].(int)), true
+		return e.complexity.Query.GetUserByEmail(childComplexity, args["email"].(string)), true
 
 	case "Query.Posts":
 		if e.complexity.Query.Posts == nil {
@@ -346,11 +346,11 @@ input NewPost {
 
 type Query {
     Posts: [Post!]!
-    GetUser(id: Int!): User
     CommentByPost(id: String!): [Comment!]!
     CreateComment(input: NewComment): String!
     CreateUser(input: NewUser): Int!
     CreatePost(input: NewPost): Int!
+    GetUserByEmail(email: String!): User
 }
 
 `, BuiltIn: false},
@@ -421,18 +421,18 @@ func (ec *executionContext) field_Query_CreateUser_args(ctx context.Context, raw
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_GetUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_GetUserByEmail_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
+	args["email"] = arg0
 	return args, nil
 }
 
@@ -874,45 +874,6 @@ func (ec *executionContext) _Query_Posts(ctx context.Context, field graphql.Coll
 	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋmemeoAmazonasᚋtestᚑnextjsᚑgolangᚑgraphqlᚑbackᚑ2022ᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_GetUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_GetUser_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetUser(rctx, args["id"].(int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.User)
-	fc.Result = res
-	return ec.marshalOUser2ᚖgithubᚗcomᚋmemeoAmazonasᚋtestᚑnextjsᚑgolangᚑgraphqlᚑbackᚑ2022ᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_CommentByPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1079,6 +1040,45 @@ func (ec *executionContext) _Query_CreatePost(ctx context.Context, field graphql
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_GetUserByEmail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_GetUserByEmail_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetUserByEmail(rctx, args["email"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋmemeoAmazonasᚋtestᚑnextjsᚑgolangᚑgraphqlᚑbackᚑ2022ᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2744,26 +2744,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "GetUser":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_GetUser(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
 		case "CommentByPost":
 			field := field
 
@@ -2846,6 +2826,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "GetUserByEmail":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_GetUserByEmail(ctx, field)
 				return res
 			}
 
