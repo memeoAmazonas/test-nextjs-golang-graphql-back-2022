@@ -20,6 +20,26 @@ func (r *queryResolver) CommentByPost(ctx context.Context, id string) ([]*model.
 	return res, nil
 }
 
+func (r *queryResolver) CreateComment(ctx context.Context, input *model.NewComment) (string, error) {
+	res := controller.CreateComment(input)
+	return res, nil
+}
+
+func (r *queryResolver) CreateUser(ctx context.Context, input *model.NewUser) (int, error) {
+	res := controller.CreateUser(input)
+	return res, nil
+}
+
+func (r *queryResolver) CreatePost(ctx context.Context, input *model.NewPost) (int, error) {
+	res := controller.CreatePost(input)
+	return res, nil
+}
+
+func (r *queryResolver) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	res := controller.GetUserByEmail(email)
+	return res, nil
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 

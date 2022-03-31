@@ -21,8 +21,27 @@ type User {
     name: String!
     email: String!
 }
+input NewComment {
+    postId: Int!
+    name: String!
+    body: String!
+}
+input NewUser {
+    name: String,
+    email: String,
+}
+input NewPost {
+    userId: Int!
+    nameUser: String!
+    body: String!
+}
 
 type Query {
-  Posts: [Post!]!
-  CommentByPost(id: String!): [Comment!]!
+    Posts: [Post!]!
+    CommentByPost(id: String!): [Comment!]!
+    CreateComment(input: NewComment): String!
+    CreateUser(input: NewUser): Int!
+    CreatePost(input: NewPost): Int!
+    GetUserByEmail(email: String!): User
 }
+
