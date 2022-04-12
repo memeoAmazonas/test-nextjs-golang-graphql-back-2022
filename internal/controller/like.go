@@ -6,17 +6,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GetPost() []*model.Post {
-	res, err := client.GetPost()
+func CreateLike(input *model.NewLike) string {
+	res, err := client.CreateLike(input)
 	if err != nil {
-		log.Error("Get list post")
-	}
-	return res
-}
-func CreatePost(input *model.NewPost) *model.Post {
-	res, err := client.CreatePost(input)
-	if err != nil {
-		log.Error("Create post")
+		log.Error("Create like")
 	}
 	return res
 }

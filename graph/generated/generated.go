@@ -53,6 +53,7 @@ type ComplexityRoot struct {
 		Body     func(childComplexity int) int
 		Comments func(childComplexity int) int
 		ID       func(childComplexity int) int
+		Likes    func(childComplexity int) int
 		Title    func(childComplexity int) int
 		User     func(childComplexity int) int
 		UserID   func(childComplexity int) int
@@ -61,6 +62,7 @@ type ComplexityRoot struct {
 	Query struct {
 		CommentByPost  func(childComplexity int, id string) int
 		CreateComment  func(childComplexity int, input *model.NewComment) int
+		CreateLike     func(childComplexity int, input *model.NewLike) int
 		CreatePost     func(childComplexity int, input *model.NewPost) int
 		CreateUser     func(childComplexity int, input *model.NewUser) int
 		GetUserByEmail func(childComplexity int, email string) int
@@ -79,8 +81,9 @@ type QueryResolver interface {
 	CommentByPost(ctx context.Context, id string) ([]*model.Comment, error)
 	CreateComment(ctx context.Context, input *model.NewComment) (string, error)
 	CreateUser(ctx context.Context, input *model.NewUser) (int, error)
-	CreatePost(ctx context.Context, input *model.NewPost) (int, error)
+	CreatePost(ctx context.Context, input *model.NewPost) (*model.Post, error)
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
+	CreateLike(ctx context.Context, input *model.NewLike) (*string, error)
 }
 
 type executableSchema struct {
@@ -147,6 +150,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.ID(childComplexity), true
 
+	case "Post.likes":
+		if e.complexity.Post.Likes == nil {
+			break
+		}
+
+		return e.complexity.Post.Likes(childComplexity), true
+
 	case "Post.title":
 		if e.complexity.Post.Title == nil {
 			break
@@ -191,6 +201,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.CreateComment(childComplexity, args["input"].(*model.NewComment)), true
+
+	case "Query.CreateLike":
+		if e.complexity.Query.CreateLike == nil {
+			break
+		}
+
+		args, err := ec.field_Query_CreateLike_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CreateLike(childComplexity, args["input"].(*model.NewLike)), true
 
 	case "Query.CreatePost":
 		if e.complexity.Query.CreatePost == nil {
@@ -317,6 +339,7 @@ type Post {
     body: String!
     user: User!
     comments: Int!
+    likes: Int!
 }
 type Comment {
     postId: Int!
@@ -344,13 +367,19 @@ input NewPost {
     body: String!
 }
 
+input NewLike {
+    userId: Int!
+    postId:  Int!
+}
+
 type Query {
     Posts: [Post!]!
     CommentByPost(id: String!): [Comment!]!
     CreateComment(input: NewComment): String!
     CreateUser(input: NewUser): Int!
-    CreatePost(input: NewPost): Int!
+    CreatePost(input: NewPost): Post!
     GetUserByEmail(email: String!): User
+    CreateLike(input: NewLike): String
 }
 
 `, BuiltIn: false},
@@ -383,6 +412,21 @@ func (ec *executionContext) field_Query_CreateComment_args(ctx context.Context, 
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalONewComment2ᚖgithubᚗcomᚋmemeoAmazonasᚋtestᚑnextjsᚑgolangᚑgraphqlᚑbackᚑ2022ᚋgraphᚋmodelᚐNewComment(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_CreateLike_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.NewLike
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalONewLike2ᚖgithubᚗcomᚋmemeoAmazonasᚋtestᚑnextjsᚑgolangᚑgraphqlᚑbackᚑ2022ᚋgraphᚋmodelᚐNewLike(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -839,6 +883,41 @@ func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.Co
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Post_likes(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Likes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_Posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1037,9 +1116,9 @@ func (ec *executionContext) _Query_CreatePost(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*model.Post)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚖgithubᚗcomᚋmemeoAmazonasᚋtestᚑnextjsᚑgolangᚑgraphqlᚑbackᚑ2022ᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_GetUserByEmail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1079,6 +1158,45 @@ func (ec *executionContext) _Query_GetUserByEmail(ctx context.Context, field gra
 	res := resTmp.(*model.User)
 	fc.Result = res
 	return ec.marshalOUser2ᚖgithubᚗcomᚋmemeoAmazonasᚋtestᚑnextjsᚑgolangᚑgraphqlᚑbackᚑ2022ᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_CreateLike(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_CreateLike_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CreateLike(rctx, args["input"].(*model.NewLike))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2482,6 +2600,37 @@ func (ec *executionContext) unmarshalInputNewComment(ctx context.Context, obj in
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNewLike(ctx context.Context, obj interface{}) (model.NewLike, error) {
+	var it model.NewLike
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "userId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
+			it.UserID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "postId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postId"))
+			it.PostID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj interface{}) (model.NewPost, error) {
 	var it model.NewPost
 	asMap := map[string]interface{}{}
@@ -2691,6 +2840,16 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "likes":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Post_likes(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2846,6 +3005,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_GetUserByEmail(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "CreateLike":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_CreateLike(ctx, field)
 				return res
 			}
 
@@ -3439,6 +3618,10 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) marshalNPost2githubᚗcomᚋmemeoAmazonasᚋtestᚑnextjsᚑgolangᚑgraphqlᚑbackᚑ2022ᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
+	return ec._Post(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNPost2ᚕᚖgithubᚗcomᚋmemeoAmazonasᚋtestᚑnextjsᚑgolangᚑgraphqlᚑbackᚑ2022ᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -3802,6 +3985,14 @@ func (ec *executionContext) unmarshalONewComment2ᚖgithubᚗcomᚋmemeoAmazonas
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputNewComment(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalONewLike2ᚖgithubᚗcomᚋmemeoAmazonasᚋtestᚑnextjsᚑgolangᚑgraphqlᚑbackᚑ2022ᚋgraphᚋmodelᚐNewLike(ctx context.Context, v interface{}) (*model.NewLike, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputNewLike(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

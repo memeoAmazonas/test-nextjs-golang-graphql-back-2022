@@ -30,7 +30,7 @@ func (r *queryResolver) CreateUser(ctx context.Context, input *model.NewUser) (i
 	return res, nil
 }
 
-func (r *queryResolver) CreatePost(ctx context.Context, input *model.NewPost) (int, error) {
+func (r *queryResolver) CreatePost(ctx context.Context, input *model.NewPost) (*model.Post, error) {
 	res := controller.CreatePost(input)
 	return res, nil
 }
@@ -38,6 +38,11 @@ func (r *queryResolver) CreatePost(ctx context.Context, input *model.NewPost) (i
 func (r *queryResolver) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	res := controller.GetUserByEmail(email)
 	return res, nil
+}
+
+func (r *queryResolver) CreateLike(ctx context.Context, input *model.NewLike) (*string, error) {
+	res := controller.CreateLike(input)
+	return &res, nil
 }
 
 // Query returns generated.QueryResolver implementation.

@@ -15,6 +15,11 @@ type NewComment struct {
 	Body   string `json:"body"`
 }
 
+type NewLike struct {
+	UserID int `json:"userId"`
+	PostID int `json:"postId"`
+}
+
 type NewPost struct {
 	UserID   int    `json:"userId"`
 	NameUser string `json:"nameUser"`
@@ -33,6 +38,7 @@ type Post struct {
 	Body     string `json:"body"`
 	User     *User  `json:"user"`
 	Comments int    `json:"comments"`
+	Likes    int    `json:"likes"`
 }
 
 type User struct {
