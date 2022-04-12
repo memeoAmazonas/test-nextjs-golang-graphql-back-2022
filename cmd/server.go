@@ -13,7 +13,7 @@ import (
 	"github.com/memeoAmazonas/test-nextjs-golang-graphql-back-2022/graph/generated"
 )
 
-const defaultPort = "3200"
+const defaultPort = "3201"
 
 func main() {
 	port := os.Getenv("PORT")
