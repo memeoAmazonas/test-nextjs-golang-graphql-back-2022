@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -16,7 +17,7 @@ func CreateUser(input *model.NewUser) (int, error) {
 
 	buff := new(bytes.Buffer)
 	json.NewEncoder(buff).Encode(input)
-	req, _ := http.NewRequest("POST", "http://localhost:3002/user", buff)
+	req, _ := http.NewRequest(POST, fmt.Sprintf("%s/user", os.Getenv("URL_CLIENT")), buff)
 	client := &http.Client{}
 	log.Info("create user")
 	res, err := client.Do(req)
@@ -37,8 +38,9 @@ func CreateUser(input *model.NewUser) (int, error) {
 }
 func GetUserByEmail(email string) (*model.User, error) {
 	var response *model.User
-	log.Info("get user")
-	res, err := http.Get(fmt.Sprintf("http://localhost:3002/user/%s", email))
+	log.Info("get user", fmt.Sprintf("%s/user/%s", os.Getenv("URL_CLIENT"), email))
+
+	res, err := http.Get(fmt.Sprintf("%s/user/%s", os.Getenv("URL_CLIENT"), email))
 
 	if err != nil {
 		log.Error("Get user", err.Error())

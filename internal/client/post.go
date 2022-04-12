@@ -3,15 +3,17 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/memeoAmazonas/test-nextjs-golang-graphql-back-2022/graph/model"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"os"
 )
 
 func GetPost() ([]*model.Post, error) {
 	var response []*model.Post
 	log.Info("get post list")
-	res, err := http.Get("http://localhost:3002/post")
+	res, err := http.Get(fmt.Sprintf("%s/post", os.Getenv("URL_CLIENT")))
 
 	if err != nil {
 		log.Error("Get post list call", err.Error())
@@ -30,7 +32,7 @@ func CreatePost(input *model.NewPost) (*model.Post, error) {
 
 	buff := new(bytes.Buffer)
 	json.NewEncoder(buff).Encode(input)
-	req, _ := http.NewRequest("POST", "http://localhost:3002/post", buff)
+	req, _ := http.NewRequest(POST, fmt.Sprintf("%s/post", os.Getenv("URL_CLIENT")), buff)
 	client := &http.Client{}
 	log.Info("create new post")
 	res, err := client.Do(req)

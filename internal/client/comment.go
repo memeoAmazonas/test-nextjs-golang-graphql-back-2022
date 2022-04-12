@@ -8,12 +8,14 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"os"
 )
 
 func GetCommentByPost(id string) ([]*model.Comment, error) {
 	var response []*model.Comment
 	log.Info("get comments by post client")
-	res, err := http.Get(fmt.Sprintf("http://localhost:3002/post/%s/comments", id))
+
+	res, err := http.Get(fmt.Sprintf("%s/post/%s/comments", os.Getenv("URL_CLIENT"), id))
 
 	if err != nil {
 		log.Error("Get comments by post call", err.Error())
@@ -32,7 +34,7 @@ func CreateComment(input *model.NewComment) (string, error) {
 
 	buff := new(bytes.Buffer)
 	json.NewEncoder(buff).Encode(input)
-	req, _ := http.NewRequest("POST", "http://localhost:3002/comment", buff)
+	req, _ := http.NewRequest(POST, fmt.Sprintf("%s/comment", os.Getenv("URL_CLIENT")), buff)
 	client := &http.Client{}
 	log.Info("create comment")
 	res, err := client.Do(req)
