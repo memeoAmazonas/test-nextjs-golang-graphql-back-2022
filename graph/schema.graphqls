@@ -9,6 +9,7 @@ type Post {
     body: String!
     user: User!
     comments: Int!
+    likes: Int!
 }
 type Comment {
     postId: Int!
@@ -36,12 +37,18 @@ input NewPost {
     body: String!
 }
 
+input NewLike {
+    userId: Int!
+    postId:  Int!
+}
+
 type Query {
     Posts: [Post!]!
     CommentByPost(id: String!): [Comment!]!
     CreateComment(input: NewComment): String!
     CreateUser(input: NewUser): Int!
-    CreatePost(input: NewPost): Int!
+    CreatePost(input: NewPost): Post!
     GetUserByEmail(email: String!): User
+    CreateLike(input: NewLike): String
 }
 

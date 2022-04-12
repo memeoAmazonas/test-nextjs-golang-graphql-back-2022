@@ -13,7 +13,7 @@ func GetPost() []*model.Post {
 	}
 	return res
 }
-func CreatePost(input *model.NewPost) int {
+func CreatePost(input *model.NewPost) *model.Post {
 	res, err := client.CreatePost(input)
 	if err != nil {
 		log.Error("Create post")
